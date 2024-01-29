@@ -1,0 +1,5 @@
+1 - https://algotrading101.com/learn/binance-python-api-guide/
+2 - https://github.com/sammchardy/python-binance
+3 - https://pypi.org/project/python-binance/
+4 - https://zetcode.com/python/python-binance/
+5 - https://hishoraj.medium.com/connect-to-binance-api-using-python-cffcfa31c71f

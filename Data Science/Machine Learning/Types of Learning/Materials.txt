@@ -1,0 +1,3 @@
+https://www.geeksforgeeks.org/supervised-unsupervised-learning/
+https://www.aitude.com/supervised-vs-unsupervised-vs-reinforcement/
+https://datasciencedojo.com/blog/machine-learning-101/

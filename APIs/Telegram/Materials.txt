@@ -1,0 +1,3 @@
+1 - https://platform.openai.com/docs/api-reference?lang=python
+2 - https://thepythoncode.com/article/make-a-telegram-bot-in-python
+3 - https://www.youtube.com/watch?v=NwBWW8cNCP4

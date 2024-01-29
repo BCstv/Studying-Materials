@@ -1,0 +1,4 @@
+1 - https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+2 - https://github.com/PyGithub/PyGithub
+3 - https://thepythoncode.com/article/using-github-api-in-python
+4 - https://github.blog/2020-12-18-learn-about-ghapi-a-new-third-party-python-client-for-the-github-api/

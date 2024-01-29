@@ -1,0 +1,4 @@
+1 - https://codereview.stackexchange.com/?tags=python
+2 - https://github.com/
+3 - https://www.reviewable.io/
+4 - https://github.com/softwaremill/codebrag

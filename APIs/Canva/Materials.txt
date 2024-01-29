@@ -1,0 +1,2 @@
+Something to manipulate pictures
+1 - https://www.canva.dev/docs/connect/api-requests/#http-method-and-url-path
