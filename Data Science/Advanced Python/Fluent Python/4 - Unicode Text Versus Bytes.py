@@ -1,5 +1,4 @@
 # Character Issues
-import abc
 
 # The concept of "string" is simple enough: a string is a sequence of characters. The problem lies in the definition of
 
@@ -94,17 +93,84 @@ utf-16le
 # Coping with UnicodeEncodeError
 
 city = 'São Paulo'
-print(city.encode('UTF-16')[2:4])
+
+print(city.encode('UTF-8'))  # The Utf encodings handle any str
+print(city.encode('UTF-16'))
+print(city.encode('iso8859_1'))  # also works for the given string
+# print(city.encode('cp437'))  # can't encode the ã. The default error handler ('strict') raises UnicodeEncodeError
+
+print(city.encode('cp437', errors='ignore'))  # The error='ignore' handler skips characters that cannot be encoded
+
+print(city.encode('cp437', errors='replace'))  # When encoding, error='replace' substitutes unencodable characters with '?'
+
+print(city.encode('cp437', errors='xmlcharrefreplace'))  # xmlcharrefreplace replaces unencodable characters with an XML entity
+# ^ This is the only option when you cannot use UTF and you can't afford to lose data
+
+# Coping with UnicodeDecodeError
+octets = b'Montr\xe9al'  # The word Montréal is encoded as latin1; \xe9 <- é
+print(octets.decode('cp1252'))  # Decoding with Windows 1252 works because it is a superset of latin1
+print(octets.decode('iso8859_7'))  # ISE8859_7 is intended for Greek, so the \xe9 byte is misinterpreted, and no error is issued
+print(octets.decode('koi8_r'))  # KOI8-R is for Russian. Now \xe9 <- И
+# print(octets.decode('utf-8'))  # The utf-8 codec detects that octets is not valid utf-8, and raises UnicodeDecodeError
+print(octets.decode('utf-8', errors='replace'))  # Using replace to replace \xe9 with �
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# BOM: A Useful Gremlin
+print('El Niño'.encode('utf-16'))
+
+# Why does 'El Niño'.encode('utf-16') looks like (b'\xff\xfeE\x00l\x00 \x00N\x00i\x00\xf1\x00o\x00')?
+r'''
+The bytes are b'\xff\xfe'. That is BOM -byte-order mark- denoting the 'little endian' byte ordering of the Intel CPU 
+where the encoding was performed.
+
+On a little-endian machine, for each code point the least significant byte comes first:
+the letter 'E', code point U+0045(decimal 69), is encoded in byte offsets 2 and 3 as 69 and 0
+
+list == [255, 254, 69, 0, 108, 0, 32, 0, 78, 0, 105, 0, 241, 0, 111, 0]
+       b'\xff\xfeE\x00l\x00\x00N\x00i\x00\xf1\x00o\x00'
+       
+On a big-endian CPU, the encoding would be reversed;
+'E' would be encoded as 0 and 69
+
+To avoid confusion, the utf-16 encoding is prepends the text to be encoded with the special invisible character ZERO
+WIDTH NO-BREAK SPACE (U+FEFF) that is encoded as b'\xff\xfe' (decimal 255,254)
+'''
+
+# There is a variant of UTF-16 = UTF-16LE that is explicitly little-endian
+
+print('El Niño'.encode('utf-16le'))
+print(list('El Niño'.encode('utf-16le')))
+
+print('El Niño'.encode('utf-16be'))
+print(list('El Niño'.encode('utf-16be')))
+
+# Caleb's Tip:
+def quote(aaa):
+    return '!' + aaa + '!'
 
 
+print(quote('''
+    One very respected man in the field is suggesting always using the UTF-8-SIG codec when reading files without a BOM
+    correctly, and does not return the BOM itself, but when writing, he recommends to use UTF-8 
+'''))
 
+# ----------------------------------------------------------------------------------------------------------------------
 
-class AAA(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def __init__(self):
-        self.__aa = 1
-        self._a = 12
+# Handling Text Files
 
-print(AAA._a)
+# Unicode sandwich (bytes should be decoded to str as early as possible on input) is the best practice for handling text I/O
 
+r'''
+ /‾‾‾‾‾‾\  bytes -> str | DECODES BYTES ON INPUT
+ ‾‾‾‾‾‾‾‾  100% str     | PROCESS TEXT ONLY
+ \‾‾‾‾‾‾‾/ str -> bytes | ENCODE TEXT ON OUTPUT
+  ‾‾‾‾‾‾‾
+'''
+
+print(open('cafe.txt', 'a', encoding='utf-8').write('café'))
+print(open('cafe.txt').read())  # Because I didn't specify an encoding mode, Python assumed to use the default Windows
+# file encoding --code page 1252--, that's why it's cafÃ© instead of café
+
+# Page 133
 
