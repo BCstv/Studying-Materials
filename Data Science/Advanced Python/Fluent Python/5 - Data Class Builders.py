@@ -2,8 +2,6 @@
 # they need to take some responsibility
 import dataclasses
 import typing
-import uuid
-
 
 # The Python suggests a few ways to build a simple class that is just a collection of fields, with little or no extra functionality:
 
