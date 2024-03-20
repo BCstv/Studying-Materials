@@ -26,6 +26,7 @@ def target():
     print('running target()')
 target = decorate(target)
 """
+import functools
 
 
 # The end result is the same: at the end of either of these snippets, the target name is bound to whatever function is
@@ -334,31 +335,222 @@ function where x is defined
 
 import time
 def clock(func):
+    """
+    Records the initial time
+    Calls the original function, saving the result
+    Computes the elapsed time
+    Formats and displays the collected data
+    Returns the result, saved after call
+    """
     def clocked(*args):  # Define inner function clocked to accept any number of positional arguments
         t0 = time.perf_counter()
         result = func(*args)  # This line only works because the closure for clocked encompasses the func free variable
         elapsed = time.perf_counter() - t0
         arg_str = ', '.join(repr(arg) for arg in args)
         print(f'[{elapsed:0.8f}] {func.__name__}({arg_str}) -> {result!r}')
+        return result
     return clocked  # Return the inner function to replace the decorated function
 
 @clock
 def snooze(seconds):
     time.sleep(seconds)
 
-
-def factorial(n: int) -> int:
-    return n if n <= 2 else n * factorial(n - 1)
+@clock
+def factorial(n):
+    return 1 if n < 2 else n*factorial(n-1)
 
 
 print('*' * 40, 'Calling snooze(.123)')
 snooze(.123)
 print('*' * 40, 'Calling factorial(6)')
-print('6! = ', clock(factorial(6)))
+factorial(10)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+# Don't forget that
+'''
+@clock
+def factorial(n):
+    ...
+'''
+# Is equal to
+'''
+clock(factorial(n))
+'''
+
+# So, in both examples, clock get the factorial function as its func argument
+print(clock(factorial).__name__)
+
+# The short description of the decorator pattern starts with:
+# Attach additional responsibilities to an object dynamically
+
+# The clock decorator has a few shortcomings: it does not support keyword arguments, and it makes the __name__ and
+# __doc__ of the decorated function
+# The function will break if we will call factorial(n=6), because n=6 is not a positional, but it's a keyword argument
+
+def clock(func):
+    @functools.wraps(func)
+    # functools.wraps, a helper for building well-behaved decorators
+    # It prohibits to the original function lose some of its metadata (__module__, __name__, __doc__, etc.) in the
+    # decorator function
+    def clocked(*args, **kwargs):
+        t0 = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - t0
+
+        arg_lst = [repr(arg) for arg in args]
+        arg_lst.extend(f'{k}={v!r}' for k, v in kwargs.items())
+        arg_str = ', '.join(arg_lst)
+
+        print(f'[{elapsed:0.8f}] {func.__name__}({arg_str}) -> {result!r}')
+        return result
+    return clocked
+
+@clock
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n-2) + fibonacci(n-1)
+
+print(fibonacci(6))
+
+# The waste is obvious: fibonacci(1) is called eight times, fibonacci(2) five times, etc.
+
+@functools.cache
+@clock
+def fibonacci(n):
+    if n < 2:
+        return n
+    return fibonacci(n-2) + fibonacci(n-1)
+
+print(fibonacci(6))
+
+# Basically, this call looks like functools.cache(clock(fibonacci(n=6)))
+
+# All the arguments taken by the decorated function must be hashable, because the underlying lru_cache uses a dict to
+# store the results, and the keys are made from the positional and keyword arguments used in the calls
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# Single Dispatch Generic Functions
+
+from functools import singledispatch
+from collections import abc
+import fractions
+import decimal
+import html
+import numbers
+
+@singledispatch
+def htmlize(obj: object) -> str:
+    content = html.escape(repr(obj))
+    return f'<pre>{content}</pre>'
+
+@htmlize.register
+def _(text: str) -> str:
+    content = html.escape(text).replace('\n', ' <br/> ')
+    return f'<p>{content}</p>'
+
+@htmlize.register
+def _(seq: abc.Sequence) -> str:
+    inner = '</li>\n<li>'.join(map(htmlize, seq))
+    return f'<ul>\n<li>{inner}</li>\n</ul>'
+
+@htmlize.register
+def _(n: numbers.Integral) -> str:
+    return f'<pre>{n} (0x{n:x})</pre>\n'
+
+@htmlize.register
+def _(n: bool) -> str:
+    return f'<pre>{n}</pre>'
+
+@htmlize.register(fractions.Fraction)
+def _(x) -> str:
+    return f'<pre>{fractions.Fraction(x)}</pre>'
+
+@htmlize.register(decimal.Decimal)
+@htmlize.register(float)
+def _(x) -> str:
+    frac = fractions.Fraction(x).limit_denominator()
+    return f'<pre>{x} ({frac.numerator}/{frac.denominator})</pre>'
+
+print(htmlize({1, 2, 3}))
+print(htmlize(abc))
+print(htmlize('Heimlich & Co.\n- a game'))
+print(htmlize(42))
+print(htmlize(['alpha', 'beta', {1, 2, 3}]))
+print(htmlize(True))
+print(htmlize(2/3))
+print(htmlize(0.3847392))
+
+# When possible, it's better to use ABC's while registering specialized functions, instead of concrete types. This
+# allows your code to support a greater variety of compatible types
+
+registry = set()
+
+def register(active=True):
+    def decorate(func):
+        print('Running register'
+              f'(active={active})->decorate({func.__name__})')
+        if active:
+            registry.add(func)
+        else:
+            registry.discard(func)
+        return func
+    return decorate
+
+@register(active=False)  # The @register factory must be invoked as a function, with the desired parameters
+def f1():
+    print('running f1')
+
+@register()  # active=True
+def f2():
+    print('running f2')
+
+def f3():
+    print('running f3')
 
 
+f1()
+f2()
+f3()
+print(registry)
+
+# If we used register as a regular function, it would have looked like this:
+register()(f3)
+print(registry)
+
+register(active=False)(f3)
+print(registry)
 
 
+# The parametrized Clock Decorator
+DEFAULT_FMT = '[{elapsed:0.8f}s] {name}({args})'
+
+def clock(fmt=DEFAULT_FMT):
+    def decorate(func):
+        @functools.wraps(func)
+        def clocked(*_args, **kwargs):
+            t0 = time.perf_counter()
+            result = repr(func(*_args, **kwargs))
+            elapsed = time.perf_counter() - t0
+            args = ', '.join(map(repr, _args))
+            name = func.__name__
+            print(fmt.format(**locals()))  # Allows to any local variable of clocked to be referenced in the fmt
+            return result
+        return clocked
+    return decorate
+
+@clock()  # Decorator factory
+def snooze(seconds):
+    time.sleep(seconds)
+
+for i in range(3):
+    snooze(1)
+
+@clock('{name}: {elapsed}s')
+def snooze(seconds):
+    time.sleep(seconds)
+
+for i in range(3):
+    snooze(1)
