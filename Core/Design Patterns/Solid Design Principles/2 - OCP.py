@@ -2,7 +2,7 @@
 2 - Open-Closed Principle
     open for extension, closed for modification
 """
-
+from abc import abstractmethod
 from enum import Enum, auto
 
 
@@ -46,11 +46,13 @@ class ProductFilter:
 # So let's use the specification pattern:
 
 class Specification:
+    @abstractmethod
     def is_satisfied(self, product):
         pass
 
 
 class Filter:
+    @abstractmethod
     def filter(self, items, spec):
         pass
 
