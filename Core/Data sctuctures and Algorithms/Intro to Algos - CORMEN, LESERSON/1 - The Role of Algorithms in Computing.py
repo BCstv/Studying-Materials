@@ -130,4 +130,18 @@ o (Small O) - ASCII: 111
 
 # No single data structure works well for all purposes, and so you should know the strengths and limitations of several of them
 
+# For each function f(n) and time t in the following table, determine the largest size n of a problem that cna be solved
+# in time t, assuming that the algorithm to solve the problem takes f(n) microseconds
 
+"""
+| Time          | 1 second | 1 minute | 1 hour   | 1 day     | 1 month    | 1 year        | 1 century     |
+|---------------|----------|----------|----------|-----------|------------|---------------|---------------|
+| log(n)        | 10^6     | 6*10^7   | 3.6*10^9 | 8.64*10^10| 2.63*10^12 | 3.15*10^13    | 3.15*10^15    |
+| sqrt(n)       | 10^12    | 3.6*10^15| 1.3*10^19| 7.46*10^21| 6.94*10^24 | 9.86*10^26    | 9.86*10^30    |
+| n             | 10^6     | 3.6*10^7 | 3.6*10^9 | 8.64*10^10| 2.63*10^12 | 3.15*10^13    | 3.15*10^15    |
+| nlog(n)       | 62746    | 2.8*10^6 | 1.3*10^8 | 5.3*10^9  | 1.8*10^11  | 2.5*10^12     | 2.8*10^14     |
+| n^2           | 1000     | 60000    | 3600000  | 1.5*10^8  | 1.6*10^10  | 1.8*10^12     | 1.8*10^16     |
+| n^3           | 100      | 3912     | 153847   | 4420*10^3 | 4420*10^3  | 4420*10^3     | 4420*10^3     |
+| 2^n           | 19       | 25       | 31       | 36        | 41         | 45            | 55            |
+| n!            | 9        | 11       | 12       | 13        | 15         | 16            | 20            |
+"""
